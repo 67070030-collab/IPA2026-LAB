@@ -1,0 +1,53 @@
+!
+! S1 - Management and control/data VLAN separation
+!
+vlan 99
+ name MANAGEMENT
+exit
+vlan 101
+ name CONTROL_DATA
+exit
+
+interface GigabitEthernet0/0
+ description MANAGEMENT_TO_S0_G0/3
+ switchport mode access
+ switchport access vlan 99
+ no shutdown
+exit
+
+interface GigabitEthernet0/1
+ description CONTROL_DATA_TO_R2_G0/2
+ switchport mode access
+ switchport access vlan 101
+ no shutdown
+exit
+
+interface GigabitEthernet1/1
+ description CONTROL_DATA_TO_UBUNTU_CLOUD_GUEST
+ switchport mode access
+ switchport access vlan 101
+ spanning-tree portfast
+ no shutdown
+exit
+
+interface Vlan99
+ description MANAGEMENT_SVI
+ ip address 172.31.2.3 255.255.255.240
+ no shutdown
+exit
+
+ip default-gateway 172.31.2.1
+
+no ip access-list standard VTY_ALLOWED
+ip access-list standard VTY_ALLOWED
+ 10 permit {{ mgmt_network }}
+ 20 permit {{ lab306_network }}
+ 90 deny any log
+exit
+
+line vty 0 15
+ access-class VTY_ALLOWED in
+ login local
+ transport input ssh telnet
+ exec-timeout 15 0
+exit

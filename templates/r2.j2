@@ -1,0 +1,64 @@
+!
+! R2 - OSPF, PAT, default-route advertisement, and protection
+!
+no ip access-list standard VTY_ALLOWED
+ip access-list standard VTY_ALLOWED
+ 10 permit {{ mgmt_network }}
+ 20 permit {{ lab306_network }}
+ 90 deny any log
+exit
+
+no ip access-list standard NAT_INSIDE
+ip access-list standard NAT_INSIDE
+ 10 permit any
+exit
+
+no ip access-list extended BLOCK_MGMT_PLANE
+ip access-list extended BLOCK_MGMT_PLANE
+ 10 deny ip any {{ mgmt_network }}
+ 20 permit ip any any
+exit
+
+router ospf {{ ospf_process }} vrf {{ control_vrf }}
+ passive-interface default
+ no passive-interface GigabitEthernet0/1
+ default-information originate
+ log-adjacency-changes
+exit
+
+interface GigabitEthernet0/1
+ description CONTROL_DATA_TO_R1_G0/2
+ ip nat inside
+ ip ospf {{ ospf_process }} area 0
+ no shutdown
+exit
+
+interface GigabitEthernet0/2
+ description CONTROL_DATA_TO_S1_G0/1
+ ip nat inside
+ ip access-group BLOCK_MGMT_PLANE in
+ ip ospf {{ ospf_process }} area 0
+ no shutdown
+exit
+
+interface GigabitEthernet0/3
+ description NAT_CLOUD
+ ip address dhcp
+ ip nat outside
+ no shutdown
+exit
+
+ip nat inside source list NAT_INSIDE interface GigabitEthernet0/3 overload
+
+{% for interface in loopbacks %}
+interface {{ interface }}
+ ip ospf {{ ospf_process }} area 0
+exit
+{% endfor %}
+
+line vty 0 15
+ access-class VTY_ALLOWED in
+ login local
+ transport input ssh telnet
+ exec-timeout 15 0
+exit
