@@ -1,5 +1,7 @@
 import os
 import paramiko
+import tkinter as tk
+from tkinter import messagebox
 
 # รายชื่อ IP Management ของอุปกรณ์ R0-R2 และ S0-S1
 # สำหรับ R0 หากเข้าจาก PC นอกแล็บ ให้ใช้ IP ขา Cloud เช่น 192.168.159.129
@@ -41,3 +43,11 @@ for dev in DEVICES:
         print(f"Failed to connect to {dev['hostname']}: {e}")
     finally:
         ssh.close()
+
+# ---------------------------------------------------------
+# เพิ่ม Feature: แสดง GUI Popup เมื่อรันเสร็จ
+# ---------------------------------------------------------
+root = tk.Tk()
+root.withdraw()  # ซ่อนหน้าต่างหลัก (จะได้มีแค่กล่องข้อความเด้งขึ้นมา)
+messagebox.showinfo("Status", "Finished Run")
+root.destroy()   # ปิดการทำงานของหน้าต่างเมื่อกด OK
